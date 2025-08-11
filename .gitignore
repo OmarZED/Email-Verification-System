@@ -40,3 +40,20 @@ bld/
 
 ## Local development settings
 appsettings.Development.json
+
+# Initialize git repository
+git init
+
+# Add all files
+git add .
+
+# Create initial commit
+git commit -m "Initial commit: Adding Razor Pages project and email listener"
+
+# Add your GitHub repository as remote (replace with your repository URL)
+git remote add origin https://github.com/yourusername/yourrepository.git
+
+# Push to GitHub
+git push -u origin main
+
+git remote -v

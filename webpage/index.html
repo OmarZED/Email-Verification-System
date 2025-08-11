@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="email"],
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="email"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c66;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .success {
+            color: #28a745;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: none;
+            margin: 10px 0;
+            color: #667eea;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .code-input {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            font-family: monospace;
+        }
+
+        .back-button {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Email Verification</h1>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Processing...
+        </div>
+        
+        <!-- Step 1: Enter Email -->
+        <div id="step1" class="step active">
+            <div class="form-group">
+                <label for="email">Enter your email address:</label>
+                <input type="email" id="email" placeholder="your.email@example.com" required>
+            </div>
+            <button id="send-code-btn" onclick="sendCode()">Continue</button>
+        </div>
+        
+        <!-- Step 2: Enter Verification Code -->
+        <div id="step2" class="step">
+            <p>We've sent a 4-digit verification code to:</p>
+            <p><strong id="email-display"></strong></p>
+            <div class="form-group">
+                <label for="code">Enter verification code:</label>
+                <input type="text" id="code" class="code-input" maxlength="4" placeholder="1234" required>
+            </div>
+            <button id="verify-code-btn" onclick="verifyCode()">Verify</button>
+            <button class="back-button" onclick="goBack()">Back</button>
+        </div>
+        
+        <!-- Step 3: Success -->
+        <div id="step3" class="step">
+            <div class="success-icon">✅</div>
+            <div class="success">
+                <strong>Email verified successfully!</strong>
+            </div>
+            <p>Your email address has been confirmed.</p>
+            <button onclick="restart()" style="margin-top: 20px;">Verify Another Email</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update this to match your API server
+        const API_BASE_URL = 'https://localhost:7259'; // Your API server URL
+        // Alternative: const API_BASE_URL = 'http://localhost:5172'; // Use HTTP if HTTPS doesn't work
+        
+        let currentEmail = '';
+
+        // Utility functions
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show the requested step
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+            
+            hideError();
+            hideLoading();
+        }
+
+        // Email validation
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // API call functions
+        async function sendCode() {
+            const email = document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showError('Please enter your email address.');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showError('Please enter a valid email address.');
+                return;
+            }
+
+            currentEmail = email;
+            showLoading();
+            
+            // Disable button
+            document.getElementById('send-code-btn').disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/registration/send-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    document.getElementById('email-display').textContent = email;
+                    showStep(2);
+                    // Focus on code input
+                    document.getElementById('code').focus();
+                } else {
+                    showError(data.message || 'Failed to send verification code. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error sending code:', error);
+                showError('Network error. Please check your connection and try again.');
+            } finally {
+                hideLoading();
+                document.getElementById('send-code-btn').disabled = false;
+            }
+        }
+
+        async function verifyCode() {
+            const code = document.getElementById('code').value.trim();
+            
+            if (!code) {
+                showError('Please enter the verification code.');
+                return;
+            }
+
+            if (code.length !== 4) {
+                showError('Please enter a 4-digit code.');
+                return;
+            }
+
+            showLoading();
+            
+            // Disable button
+            document.getElementById('verify-code-btn').disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/registration/verify-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        email: currentEmail, 
+                        code: code 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showStep(3);
+                } else {
+                    showError(data.message || 'Invalid verification code. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error verifying code:', error);
+                showError('Network error. Please check your connection and try again.');
+            } finally {
+                hideLoading();
+                document.getElementById('verify-code-btn').disabled = false;
+            }
+        }
+
+        // Navigation functions
+        function goBack() {
+            showStep(1);
+            document.getElementById('code').value = '';
+        }
+
+        function restart() {
+            showStep(1);
+            document.getElementById('email').value = '';
+            document.getElementById('code').value = '';
+            currentEmail = '';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-format code input
+            document.getElementById('code').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, ''); // Only digits
+                if (value.length > 4) {
+                    value = value.slice(0, 4);
+                }
+                e.target.value = value;
+            });
+
+            // Enter key handlers
+            document.getElementById('email').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendCode();
+                }
+            });
+
+            document.getElementById('code').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyCode();
+                }
+            });
+        });
+
+        // Debug info
+        console.log('API Base URL:', API_BASE_URL);
+        console.log('Available endpoints:');
+        console.log('- POST /api/registration/send-code');
+        console.log('- POST /api/registration/verify-code');
+    </script>
+</body>
+</html>
