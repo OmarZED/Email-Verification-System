@@ -1,18 +1,17 @@
 # 📧 Email Verification System
 
-A full-stack email verification system built with **ASP.NET Core**, **RabbitMQ**, and **Razor Pages**. Features secure code generation, message queuing, and real-time verification with anti-spam protection.
-
-
+A full-stack email verification system built with **ASP.NET Core API**, **RabbitMQ**, and **modern HTML/JavaScript**. Features secure code generation, message queuing, and real-time verification with anti-spam protection.
 
 ## 🚀 Features
 
-### Web Application (ASP.NET Core + Razor Pages)
+### Web Application (ASP.NET Core API + HTML/JavaScript Frontend)
+- ✅ **Modern Web Interface** - Responsive HTML/JavaScript with smooth animations
 - ✅ **Secure Code Generation** - 4-digit verification codes with expiration
 - ✅ **Message Queue Integration** - RabbitMQ for reliable message processing  
 - ✅ **Anti-Spam Protection** - Rate limiting and cooldown periods
-- ✅ **Input Validation** - Email format and code validation
-- ✅ **Responsive UI** - Clean Razor Pages interface
+- ✅ **Real-time Validation** - Client-side and server-side input validation
 - ✅ **RESTful API** - Clean endpoint design with Swagger documentation
+- ✅ **CORS Support** - Cross-origin requests for development
 
 ### Email Consumer (Console Application)
 - 📨 **Asynchronous Processing** - Listens to RabbitMQ queue
@@ -21,17 +20,18 @@ A full-stack email verification system built with **ASP.NET Core**, **RabbitMQ**
 - 📨 **Formatted Output** - `2024.08.10 15:30 user@email.com код: 1234`
 
 ### Security Features  
-- 🔒 **Time-based Expiration** - Codes expire after 10 minutes
-- 🔒 **Attempt Limiting** - Maximum 3 verification attempts
+- 🔒 **Time-based Expiration** - Codes expire after configurable time
+- 🔒 **Attempt Limiting** - Maximum verification attempts per code
 - 🔒 **Rate Limiting** - 1-minute cooldown between code requests
 - 🔒 **Input Sanitization** - Prevents injection attacks
+- 🔒 **HTTPS Support** - Secure communication
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐    HTTP     ┌─────────────┐    Queue    ┌─────────────┐
-│ Razor Pages │ ──────────► │  ASP.NET    │ ──────────► │  RabbitMQ   │
-│   Web App   │             │    API      │             │   Queue     │
+┌─────────────┐    AJAX     ┌─────────────┐    Queue    ┌─────────────┐
+│ HTML/JS     │ ──────────► │  ASP.NET    │ ──────────► │  RabbitMQ   │
+│  Frontend   │   (CORS)    │Core API     │             │   Queue     │
 └─────────────┘             └─────────────┘             └─────────────┘
                                    │                            │
                                    ▼                            ▼
@@ -43,12 +43,19 @@ A full-stack email verification system built with **ASP.NET Core**, **RabbitMQ**
 
 ## 🛠️ Tech Stack
 
-### Web Application
+### Backend API
 - **Framework**: ASP.NET Core 8.0
-- **Frontend**: Razor Pages + Bootstrap
 - **Language**: C# 11
 - **Message Broker**: RabbitMQ 3.12
 - **Documentation**: Swagger/OpenAPI
+- **CORS**: Enabled for cross-origin requests
+
+### Frontend
+- **Type**: Static HTML/CSS/JavaScript
+- **Style**: Modern CSS with gradients and animations
+- **AJAX**: Fetch API for REST calls
+- **Responsive**: Mobile-friendly design
+- **Validation**: Real-time input validation
 
 ### Email Consumer
 - **Type**: .NET Console Application
@@ -60,6 +67,7 @@ A full-stack email verification system built with **ASP.NET Core**, **RabbitMQ**
 ### Prerequisites
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download)
 - [RabbitMQ Server](https://www.rabbitmq.com/download.html)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### 1. Clone Repository
 ```bash
@@ -67,7 +75,7 @@ git clone https://github.com/yourusername/email-verification-system.git
 cd email-verification-system
 ```
 
-### 2. Web Application Setup
+### 2. Web API Setup
 ```bash
 cd EmailVerificationApi
 dotnet restore
@@ -102,29 +110,51 @@ Update `EmailVerificationApi/appsettings.json`:
 
 ## 🚀 Running the Applications
 
-### Start Email Consumer (Terminal 1)
+### Method 1: Serve HTML from API Server (Recommended)
+
+#### Step 1: Setup Static Files
+1. Create `wwwroot` folder in your API project
+2. Save the HTML file as `wwwroot/index.html`
+3. Update `Program.cs` to serve static files:
+```csharp
+app.UseDefaultFiles();
+app.UseStaticFiles();
+```
+
+#### Step 2: Start Applications
 ```bash
-cd EmailSender
+# Terminal 1: Start Email Consumer
+cd EmailConsumer
+dotnet run
+
+# Terminal 2: Start API Server
+cd EmailVerificationApi
 dotnet run
 ```
 
-Console output will show:
-```
-Email Consumer Service Starting...
-Listening for email tasks from RabbitMQ
-Connected to RabbitMQ. Waiting for messages...
-```
+#### Step 3: Access Application
+- **Web Interface**: `https://localhost:7259/` or `http://localhost:5172/`
+- **API Documentation**: `https://localhost:7259/swagger`
 
-### Start Web Application (Terminal 2)
+### Method 2: Separate HTML Server (Development)
+
+#### Step 1: Start API Server
 ```bash
 cd EmailVerificationApi
 dotnet run
 ```
 
-### Access Applications
-- **Web Application**: `https://localhost:7xxx` (Razor Pages UI)
-- **API Documentation**: `https://localhost:7xxx/swagger`
-- **RabbitMQ Management**: `http://localhost:15672` (guest/guest)
+#### Step 2: Serve HTML (using VS Code Live Server or similar)
+1. Open `index.html` in VS Code
+2. Right-click → "Open with Live Server"
+3. Updates the API URL in JavaScript:
+```javascript
+const API_BASE_URL = 'https://localhost:7259'; // Your API port
+```
+
+#### Step 3: Access Application
+- **Web Interface**: `http://127.0.0.1:5500/index.html`
+- **API Server**: `https://localhost:7259/swagger`
 
 ## 📡 API Endpoints
 
@@ -165,44 +195,49 @@ Content-Type: application/json
 }
 ```
 
-### Check Status
-```http
-GET /api/registration/status/user@example.com
-```
-
 ## 🧪 Testing
 
 ### Web Interface Testing
-1. Start both applications (Consumer + Web App)
-2. Navigate to `https://localhost:7xxx`
-3. Enter email address and click "Send Code"
-4. Check EmailConsumer console for generated code
-5. Enter code on verification page
+1. **Start both applications** (Consumer + API)
+2. **Access web interface**:
+   - Method 1: `https://localhost:7259/`
+   - Method 2: `http://127.0.0.1:5500/index.html`
+3. **Enter email** and click "Continue"
+4. **Check EmailConsumer console** for generated code
+5. **Enter code** on verification page
+6. **See success message**
 
 ### API Testing
-1. Use Swagger UI at `https://localhost:7xxx/swagger`
-2. Test endpoints with sample data
-3. Monitor console output in EmailConsumer
+1. **Use Swagger UI** at `https://localhost:7259/swagger`
+2. **Test endpoints** with sample data
+3. **Monitor console output** in EmailConsumer
 
-### Example Flow
+### Example Testing Flow
 ```bash
-# 1. Request code via web interface or API
-# Web: https://localhost:7xxx
-# API: POST /api/registration/send-code
+# 1. Start EmailConsumer
+dotnet run  # Shows: "Listening for email tasks from RabbitMQ"
 
-# 2. Check EmailConsumer console output:
-# "2024.08.10 15:30 test@example.com код: 1234"
+# 2. Start API Server  
+dotnet run  # Shows: "Now listening on: https://localhost:7259"
 
-# 3. Verify code via web interface or API  
-# Web: Enter code in verification form
-# API: POST /api/registration/verify-code
+# 3. Open web interface
+# Browser: https://localhost:7259/
+
+# 4. Request verification code
+# Input: test@example.com → Click "Continue"
+
+# 5. Check console output
+# EmailConsumer shows: "2024.08.10 15:30 test@example.com код: 1234"
+
+# 6. Verify code
+# Input: 1234 → Click "Verify" → Success!
 ```
 
 ## 🏗️ Project Structure
 
 ```
 email-verification-system/
-├── EmailSender/              # Web Application Project
+├── EmailVerificationApi/          # Web API Project
 │   ├── Controllers/
 │   │   └── RegistrationController.cs  # API endpoints
 │   ├── Services/
@@ -210,34 +245,83 @@ email-verification-system/
 │   │   └── EmailVerificationService.cs # Core verification logic
 │   ├── Models/
 │   │   └── ApiModels.cs              # DTOs and data models
-│   ├── Pages/                        # Razor Pages (if implemented)
-│   ├── Program.cs                    # Web app startup
+│   ├── wwwroot/                      # Static files (optional)
+│   │   └── index.html                # Web interface
+│   ├── Program.cs                    # API startup configuration
 │   └── appsettings.json              # Configuration
-└── EmailConsumer/                    # Console Application Project
-    ├── Program.cs                    # Email consumer logic
-    └── EmailConsumer.csproj          # Project file
+├── EmailConsumer/                    # Console Application
+│   ├── Program.cs                    # Email consumer logic
+│   └── EmailConsumer.csproj          # Project file
+└── index.html                        # Standalone HTML file (alternative)
 ```
+
+## 🎨 Frontend Features
+
+### Modern UI Design
+- **Gradient backgrounds** with smooth animations
+- **Responsive layout** that works on mobile and desktop
+- **Loading states** with spinning indicators
+- **Error handling** with user-friendly messages
+- **Step-by-step wizard** interface
+
+### User Experience
+- **Auto-formatting** for 4-digit verification codes
+- **Keyboard support** (Enter key to submit forms)
+- **Input validation** in real-time
+- **Back button** to return to previous step
+- **Restart functionality** to verify another email
+
+### Technical Features
+- **Fetch API** for modern HTTP requests
+- **Async/await** for clean asynchronous code
+- **CORS handling** for cross-origin requests
+- **Error handling** for network and API errors
+- **Console logging** for debugging
 
 ## 🔒 Security Considerations
 
-- **Code Expiration**: 10-minute automatic expiration
-- **Rate Limiting**: 1-minute cooldown between requests
-- **Attempt Limiting**: Maximum 3 verification attempts
-- **Input Validation**: Email format and code format validation
+- **Code Expiration**: Configurable automatic expiration
+- **Rate Limiting**: Cooldown periods between requests
+- **Attempt Limiting**: Maximum verification attempts per code
+- **Input Validation**: Both client-side and server-side validation
+- **CORS Configuration**: Specific origin allowlisting
+- **HTTPS Support**: Secure communication
 - **Memory Storage**: Codes stored in-memory (auto-cleanup on restart)
-- **HTTPS**: Secure communication between client and server
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### CORS Errors
+```bash
+# Error: "Access to fetch... has been blocked by CORS policy"
+# Solution: Ensure CORS is properly configured in Program.cs
+```
+
+#### Network Errors  
+```bash
+# Error: "Network error. Please check your connection"
+# Solution: Check API_BASE_URL in JavaScript matches your API server
+```
+
+#### API Not Found
+```bash
+# Error: 404 Not Found on API calls
+# Solution: Verify API server is running and endpoints exist
+```
 
 ## 🚀 Future Enhancements
 
-- [ ] **Enhanced Razor Pages UI** - Complete frontend implementation
-- [ ] **Internationalization** - English/Russian language support  
-- [ ] **CAPTCHA Integration** - Additional spam protection
-- [ ] **Database Storage** - Persistent verification data
-- [ ] **Email Templates** - HTML email formatting
+- [ ] **Database Storage** - Persistent verification data with Entity Framework
+- [ ] **Email Templates** - HTML email formatting and actual SMTP sending
+- [ ] **Internationalization** - Multi-language support (English/Russian)
+- [ ] **Authentication** - User accounts and session management
+- [ ] **Admin Dashboard** - Verification statistics and management
 - [ ] **SMS Support** - Alternative verification method
-- [ ] **Admin Dashboard** - Verification statistics
 - [ ] **Docker Support** - Containerized deployment
 - [ ] **Unit Tests** - Comprehensive test coverage
+- [ ] **CI/CD Pipeline** - Automated testing and deployment
+- [ ] **Production Deployment** - Cloud hosting configurations
 
 ## 🤝 Contributing
 
@@ -248,15 +332,3 @@ email-verification-system/
 5. Open Pull Request
 
 
-
-
-## 🙏 Acknowledgments
-
-- Built as part of technical assessment demonstration
-- RabbitMQ for reliable message queuing
-- ASP.NET Core team for excellent framework
-- Community for inspiration and best practices
-
----
-
-⭐ **Star this repository if it helped you!**
